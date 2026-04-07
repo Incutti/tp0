@@ -1,5 +1,10 @@
 #include "client.h"
+#include "utils.h"
 #include <commons/log.h>
+#include <netdb.h>
+#include <readline/readline.h>
+#include <stdlib.h>
+#include <string.h>
 
 int main(void)
 {
@@ -50,10 +55,11 @@ int main(void)
 	conexion = crear_conexion(ip, puerto);
 
 	// Enviamos al servidor el valor de CLAVE como mensaje
+	enviar_mensaje(valor, conexion);
 
 	// Armamos y enviamos el paquete
 	paquete(conexion);
-
+	
 	terminar_programa(conexion, logger, config);
 
 	/*---------------------------------------------------PARTE 5-------------------------------------------------------------*/
@@ -82,24 +88,37 @@ void leer_consola(t_log* logger)
 	leido = readline("> ");
 
 	// El resto, las vamos leyendo y logueando hasta recibir un string vacío
-
-
+	while(leido != NULL && strcmp(leido, "") != 0){
+		log_info(logger, "%s", leido);
+		free(leido);
+		leido = readline("> ");
+	} 
+	
 	// ¡No te olvides de liberar las lineas antes de regresar!
+	free(leido);
 
 }
+
 
 void paquete(int conexion)
 {
 	// Ahora toca lo divertido!
-	char* leido;
-	t_paquete* paquete;
+	char* leido = readline("> ");
+	t_paquete* paquete = crear_paquete();
 
 	// Leemos y esta vez agregamos las lineas al paquete
-
+	while(leido != NULL && strcmp(leido, "") != 0){
+		agregar_a_paquete(paquete, leido, strlen(leido));
+		free(leido);
+		leido = readline("> ");
+	} 
+	enviar_paquete(paquete, conexion);
 
 	// ¡No te olvides de liberar las líneas y el paquete antes de regresar!
-	
+	free(leido);
+	eliminar_paquete(paquete);
 }
+
 
 void terminar_programa(int conexion, t_log* logger, t_config* config)
 {
@@ -107,4 +126,5 @@ void terminar_programa(int conexion, t_log* logger, t_config* config)
 	  con las funciones de las commons y del TP mencionadas en el enunciado */
 	log_destroy(logger);
 	config_destroy(config);
+	liberar_conexion(conexion);
 }
